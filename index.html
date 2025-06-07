@@ -1,0 +1,738 @@
+অবশ্যই! আমি আপনার পুরো সাইটের কোড **Google Sheets থেকে ডাইনামিক মেনু লোড করার জন্য** আপডেট করে দিবো, বাকি সব কিছু আগের মতোই থাকবে।
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Brews & Bakes - Coffee Shop</title>
+<style>
+  /* Reset & base */
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f9f7f1;
+    color: #4b3b2b;
+    line-height: 1.6;
+  }
+  a {
+    color: #6f4e37;
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Header */
+  header {
+    background-color: #3e2f1c;
+    color: #f9f7f1;
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+  header img.logo {
+    height: 60px;
+  }
+  header h1 {
+    font-family: 'Georgia', serif;
+    font-size: 2.5rem;
+    margin: 0 20px;
+    flex-grow: 1;
+  }
+  nav {
+    display: flex;
+    gap: 25px;
+  }
+  nav button {
+    background: none;
+    border: none;
+    color: #f9f7f1;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+  }
+  nav button:hover,
+  nav button.active {
+    background-color: #6f4e37;
+  }
+
+  /* Container */
+  .container {
+    max-width: 1100px;
+    margin: 40px auto 80px;
+    padding: 0 20px;
+  }
+
+  /* Tab content */
+  .tab-content {
+    display: none;
+    animation: fadeIn 0.5s ease forwards;
+  }
+  .tab-content.active {
+    display: block;
+  }
+  @keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+  }
+
+  /* Home */
+  #home img.shop-front {
+    width: 100%;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    margin-top: 20px;
+  }
+  #home p {
+    font-size: 1.2rem;
+    margin-top: 15px;
+  }
+
+  /* Menu */
+  #menu h2 {
+    font-family: 'Georgia', serif;
+    font-size: 2rem;
+    color: #6f4e37;
+    border-bottom: 3px solid #d9b382;
+    padding-bottom: 8px;
+    margin-bottom: 30px;
+    text-align: center;
+  }
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(280px,1fr));
+    gap: 25px;
+  }
+  .menu-item {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .menu-item:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+  }
+  .menu-item img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+  }
+  .menu-item-details {
+    padding: 20px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .menu-item-details h3 {
+    margin: 0 0 10px 0;
+    color: #6f4e37;
+    font-size: 1.4rem;
+  }
+  .menu-item-details p.description {
+    flex-grow: 1;
+    font-size: 1rem;
+    margin-bottom: 15px;
+    color: #5a4a3a;
+  }
+  .menu-item-details p.price {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #3e2f1c;
+  }
+
+  /* About */
+  #about h2 {
+    font-family: 'Georgia', serif;
+    font-size: 2rem;
+    color: #6f4e37;
+    border-bottom: 3px solid #d9b382;
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+  }
+  #about p {
+    font-size: 1.1rem;
+    max-width: 800px;
+    margin-bottom: 20px;
+  }
+  #about .about-images {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  #about .about-images img {
+    width: 300px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 15px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    transition: transform 0.3s ease;
+    cursor: pointer;
+  }
+  #about .about-images img:hover {
+    transform: scale(1.05);
+  }
+  @media (max-width: 600px) {
+    #about .about-images img {
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  /* Contact */
+  #contact h2 {
+    font-family: 'Georgia', serif;
+    font-size: 2rem;
+    color: #6f4e37;
+    border-bottom: 3px solid #d9b382;
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+  }
+  #contact p {
+    font-size: 1.1rem;
+    max-width: 800px;
+    margin-bottom: 10px;
+  }
+  #contact a {
+    color: #6f4e37;
+    font-weight: 600;
+  }
+
+  /* Contact Images */
+  .contact-images {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .contact-images img {
+    width: 300px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    transition: transform 0.3s ease;
+    cursor: pointer;
+  }
+  .contact-images img:hover {
+    transform: scale(1.05);
+  }
+  @media (max-width: 600px) {
+    .contact-images img {
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  /* Footer */
+  footer {
+    background-color: #3e2f1c;
+    color: #f9f7f1;
+    text-align: center;
+    padding: 20px 10px;
+    font-size: 0.9rem;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    header {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+      flex-grow: 0;
+    }
+    nav {
+      width: 100%;
+      justify-content: center;
+    }
+    .menu-item img {
+      height: 160px;
+    }
+  }
+
+  /* New Features Styles */
+
+  /* Online Order & Reservation Forms */
+  form {
+    background: #fff;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    max-width: 600px;
+    margin: 20px auto;
+  }
+  form h3 {
+    margin-top: 0;
+    color: #6f4e37;
+  }
+  form label {
+    display: block;
+    margin: 12px 0 6px;
+    font-weight: 600;
+  }
+  form input, form select, form textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+  form button {
+    margin-top: 15px;
+    background-color: #6f4e37;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  form button:hover {
+    background-color: #5a3e2a;
+  }
+
+  /* Blog Section */
+  .blog-posts {
+    max-width: 900px;
+    margin: 20px auto;
+  }
+  .blog-post {
+    background: #fff;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    margin-bottom: 25px;
+  }
+  .blog-post h3 {
+    margin-top: 0;
+    color: #6f4e37;
+  }
+  .blog-post p {
+    color: #5a4a3a;
+  }
+
+  /* Events & Offers */
+  .events {
+    max-width: 900px;
+    margin: 20px auto;
+  }
+  .event {
+    background: #fff;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    margin-bottom: 25px;
+  }
+  .event h3 {
+    margin-top: 0;
+    color: #6f4e37;
+  }
+  .event p {
+    color: #5a4a3a;
+  }
+
+  /* Social Media Share Buttons */
+  .social-share {
+    text-align: center;
+    margin: 30px 0;
+  }
+  .social-share button {
+    background-color: #6f4e37;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    margin: 0 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+  }
+  .social-share button:hover {
+    background-color: #5a3e2a;
+  }
+
+  /* Newsletter Subscription */
+  .newsletter {
+    max-width: 600px;
+    margin: 30px auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  .newsletter input[type="email"] {
+    width: 70%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-right: 10px;
+  }
+  .newsletter button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    background-color: #6f4e37;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+  }
+  .newsletter button:hover {
+    background-color: #5a3e2a;
+  }
+
+  /* FAQ Section */
+  .faq {
+    max-width: 900px;
+    margin: 30px auto;
+  }
+  .faq-item {
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+    padding: 20px;
+  }
+  .faq-item h4 {
+    margin: 0 0 10px;
+    color: #6f4e37;
+    cursor: pointer;
+  }
+  .faq-item p {
+    margin: 0;
+    display: none;
+    color: #5a4a3a;
+  }
+  .faq-item.active p {
+    display: block;
+  }
+
+  /* Loyalty Program */
+  .loyalty {
+    max-width: 900px;
+    margin: 30px auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  }
+  .loyalty h3 {
+    margin-top: 0;
+    color: #6f4e37;
+  }
+  .loyalty p {
+    color: #5a4a3a;
+  }
+
+  /* Google Maps */
+  .map-container {
+    max-width: 900px;
+    margin: 30px auto;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  }
+  .map-container iframe {
+    width: 100%;
+    height: 400px;
+    border: 0;
+  }
+
+</style>
+</head>
+<body>
+
+<header>
+  <img src="https://i.imgur.com/0tifRO9.png" alt="Brews & Bakes Logo" class="logo" />
+  <h1>Brews & Bakes</h1>
+  <nav>
+    <button class="tab-link active" data-tab="home">Home</button>
+    <button class="tab-link" data-tab="menu">Menu</button>
+    <button class="tab-link" data-tab="about">About Us</button>
+    <button class="tab-link" data-tab="contact">Contact</button>
+    <button class="tab-link" data-tab="order">Order Online</button>
+    <button class="tab-link" data-tab="reservation">Reservation</button>
+    <button class="tab-link" data-tab="blog">Blog</button>
+    <button class="tab-link" data-tab="events">Events</button>
+    <button class="tab-link" data-tab="newsletter">Newsletter</button>
+    <button class="tab-link" data-tab="faq">FAQ</button>
+    <button class="tab-link" data-tab="loyalty">Loyalty Program</button>
+    <button class="tab-link" data-tab="map">Location</button>
+  </nav>
+</header>
+
+<div class="container">
+
+  <!-- Existing Sections -->
+
+  <section id="home" class="tab-content active">
+    <h2>Welcome to Brews & Bakes!</h2>
+    <p>Come enjoy the best coffee and fresh bakery items. Start your day in a cozy and relaxing atmosphere.</p>
+    <img src="https://i.imgur.com/dcHvnJm.jpg" alt="Brews & Bakes Shop Front" class="shop-front" />
+  </section>
+
+  <section id="menu" class="tab-content">
+    <h2>Our Menu</h2>
+    <div class="menu-grid" id="menuGrid"></div>
+  </section>
+
+  <section id="about" class="tab-content">
+    <h2>About Us</h2>
+    <p>Brews & Bakes has been serving quality coffee and bakery items since 2015. Our goal is to make your everyday moments sweeter and more enjoyable.</p>
+    <div class="about-images">
+      <img src="https://i.imgur.com/jUm1frg.jpg" alt="Coffee and Cake" />
+      <img src="https://i.imgur.com/sEdzH5u.jpg" alt="Refreshing Drinks" />
+      <img src="https://i.imgur.com/cNagDgg.jpg" alt="Delicious Cakes" />
+    </div>
+  </section>
+
+  <section id="contact" class="tab-content">
+    <h2>Contact</h2>
+    <p>Address: Rajshahi Nagar Vaban, Dorikhorbona More, Rajshahi, Bangladesh</p>
+    <p>Phone: 01744258825</p>
+    <p>Email: <a href="mailto:brewsbakse@gmail.com">brewsbakse@gmail.com</a></p>
+    <p>Facebook: <a href="https://www.facebook.com/profile.php?id=61555023698353&sk=photos" target="_blank" rel="noopener noreferrer">Visit our Facebook page</a></p>
+    <div class="contact-images">
+      <img src="https://i.imgur.com/sEdzH5u.jpg" alt="Refreshing Drinks" />
+      <img src="https://i.imgur.com/jUm1frg.jpg" alt="Delicious Cakes" />
+      <img src="https://i.imgur.com/cNagDgg.jpg" alt="Delicious Cakes" />
+    </div>
+  </section>
+
+  <!-- New Features Sections -->
+
+  <section id="order" class="tab-content">
+    <h2>Order Online</h2>
+    <form id="orderForm">
+      <h3>Place Your Order</h3>
+      <label for="orderName">Name:</label>
+      <input type="text" id="orderName" name="orderName" required />
+      <label for="orderPhone">Phone:</label>
+      <input type="tel" id="orderPhone" name="orderPhone" required />
+      <label for="orderItem">Select Item:</label>
+      <select id="orderItem" name="orderItem" required>
+        <option value="">--Choose--</option>
+        <option value="Cappuccino">Cappuccino</option>
+        <option value="Latte">Latte</option>
+        <option value="Croissant">Freshly Baked Croissant</option>
+        <option value="Chocolate Muffin">Chocolate Muffin</option>
+      </select>
+      <label for="orderQuantity">Quantity:</label>
+      <input type="number" id="orderQuantity" name="orderQuantity" min="1" value="1" required />
+      <label for="orderNotes">Additional Notes:</label>
+      <textarea id="orderNotes" name="orderNotes" rows="3"></textarea>
+      <button type="submit">Submit Order</button>
+    </form>
+  </section>
+
+  <section id="reservation" class="tab-content">
+    <h2>Table Reservation</h2>
+    <form id="reservationForm">
+      <h3>Book a Table</h3>
+      <label for="resName">Name:</label>
+      <input type="text" id="resName" name="resName" required />
+      <label for="resPhone">Phone:</label>
+      <input type="tel" id="resPhone" name="resPhone" required />
+      <label for="resDate">Date:</label>
+      <input type="date" id="resDate" name="resDate" required />
+      <label for="resTime">Time:</label>
+      <input type="time" id="resTime" name="resTime" required />
+      <label for="resGuests">Number of Guests:</label>
+      <input type="number" id="resGuests" name="resGuests" min="1" value="1" required />
+      <button type="submit">Reserve</button>
+    </form>
+  </section>
+
+  <section id="blog" class="tab-content">
+    <h2>Blog & News</h2>
+    <div class="blog-posts">
+      <div class="blog-post">
+        <h3>5 Tips for Brewing the Perfect Coffee</h3>
+        <p>Learn how to make your coffee taste amazing every time with these simple tips.</p>
+      </div>
+      <div class="blog-post">
+        <h3>New Seasonal Flavors Now Available</h3>
+        <p>Try our new pumpkin spice latte and other seasonal favorites this fall.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="events" class="tab-content">
+    <h2>Events & Offers</h2>
+    <div class="events">
+      <div class="event">
+        <h3>Live Music Night - Every Friday</h3>
+        <p>Enjoy live performances by local artists while sipping your favorite coffee.</p>
+      </div>
+      <div class="event">
+        <h3>Happy Hour - 4 PM to 6 PM</h3>
+        <p>Get 20% off on all drinks during happy hour every weekday.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="newsletter" class="tab-content">
+    <h2>Subscribe to Our Newsletter</h2>
+    <div class="newsletter">
+      <input type="email" id="newsletterEmail" placeholder="Enter your email" />
+      <button id="subscribeBtn">Subscribe</button>
+    </div>
+  </section>
+
+  <section id="faq" class="tab-content">
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq">
+      <div class="faq-item">
+        <h4>Do you offer vegan options?</h4>
+        <p>Yes, we have a variety of vegan-friendly drinks and snacks.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Can I order online for delivery?</h4>
+        <p>Currently, we offer online ordering for pickup only.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="loyalty" class="tab-content">
+    <h2>Loyalty Program</h2>
+    <div class="loyalty">
+      <h3>Join Our Loyalty Program</h3>
+      <p>Earn points with every purchase and redeem them for discounts and free items.</p>
+    </div>
+  </section>
+
+  <section id="map" class="tab-content">
+    <h2>Our Location</h2>
+    <div class="map-container">
+      <iframe 
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3651.1234567890123!2d88.604123456789!3d24.363123456789!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39fbf123456789ab%3A0x123456789abcdef!2sRajshahi%20Nagar%20Vaban!5e0!3m2!1sen!2sbd!4v1234567890123" 
+        width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  &copy; 2025 Brews & Bakes. All rights reserved.
+</footer>
+
+<script>
+  const tabs = document.querySelectorAll('.tab-link');
+  const contents = document.querySelectorAll('.tab-content');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      contents.forEach(c => c.classList.remove('active'));
+
+      tab.classList.add('active');
+      const tabId = tab.getAttribute('data-tab');
+      document.getElementById(tabId).classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  // FAQ toggle
+  document.querySelectorAll('.faq-item h4').forEach(item => {
+    item.addEventListener('click', () => {
+      item.parentElement.classList.toggle('active');
+    });
+  });
+
+  // Newsletter subscription (dummy)
+  document.getElementById('subscribeBtn').addEventListener('click', () => {
+    const email = document.getElementById('newsletterEmail').value;
+    if(email) {
+      alert(`Thank you for subscribing with ${email}!`);
+      document.getElementById('newsletterEmail').value = '';
+    } else {
+      alert('Please enter a valid email address.');
+    }
+  });
+
+  // Simple form submission handlers (dummy)
+  document.getElementById('orderForm').addEventListener('submit', e => {
+    e.preventDefault();
+    alert('Order submitted! We will contact you soon.');
+    e.target.reset();
+  });
+  document.getElementById('reservationForm').addEventListener('submit', e => {
+    e.preventDefault();
+    alert('Reservation confirmed! See you soon.');
+    e.target.reset();
+  });
+
+  // Fetch menu from Google Sheets CSV
+  const csvUrl = 'https://docs.google.com/spreadsheets/d/1e4oeK7FyIGnC9BWpJdCbf_AVLVhWo8py5t9eDo0D06A/export?format=csv&id=1e4oeK7FyIGnC9BWpJdCbf_AVLVhWo8py5t9eDo0D06A&gid=0';
+
+  async function fetchMenu() {
+    try {
+      const response = await fetch(csvUrl);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const csvText = await response.text();
+      const rows = csvText.trim().split('\n');
+      const headers = rows[0].split(',');
+
+      const menuItems = rows.slice(1).map(row => {
+        const values = row.split(',');
+        let item = {};
+        headers.forEach((header, i) => {
+          item[header.trim()] = values[i] ? values[i].trim() : '';
+        });
+        return item;
+      });
+
+      const menuGrid = document.getElementById('menuGrid');
+      menuGrid.innerHTML = menuItems.map(item => `
+        <article class="menu-item">
+          <img src="${item['Image URL']}" alt="${item['Name']}" />
+          <div class="menu-item-details">
+            <h3>${item['Name']}</h3>
+            <p class="description">${item['Description']}</p>
+            <p class="price">${item['Price']}</p>
+          </div>
+        </article>
+      `).join('');
+    } catch (error) {
+      console.error('Error fetching menu:', error);
+      document.getElementById('menuGrid').innerHTML = '<p style="color:red; text-align:center;">Failed to load menu. Please try again later.</p>';
+    }
+  }
+
+  fetchMenu();
+</script>
+
+</body>
+</html>
+```
+
